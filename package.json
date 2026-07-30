@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "bin": {
-    "pre-commit": "./bin/fe-commit.mjs"
+    "pre-commit": "./bin/pre-commit.mjs"
   }
 }
