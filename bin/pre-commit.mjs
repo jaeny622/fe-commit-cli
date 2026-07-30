@@ -116,7 +116,7 @@ async function runLint(repoRoot, files) {
         process.stdout.write(result.output.endsWith('\n') ? result.output : `${result.output}\n`);
     }
 
-    console.log( `[qa-commit] errors=${result.errorCount ?? 0}, warnings=${result.warningCount ?? 0}`);
+    console.log( `[pre-commit] errors=${result.errorCount ?? 0}, warnings=${result.warningCount ?? 0}`);
 }
 
 async function main() {
