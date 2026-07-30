@@ -1,0 +1,9 @@
+{
+  "name": "fe-commit-cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "pre-commit": "./bin/fe-commit.mjs"
+  }
+}
