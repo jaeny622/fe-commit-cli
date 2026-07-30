@@ -18,9 +18,9 @@ function parseArgs(argv) {
 
         // 현재 인자가 -m 또는 --message 옵션인지 확인
         if (arg === '-m' || arg === '--message') {
-        message = argv[i + 1] || ''; // 다음 값을 메시지로 저장
-        i += 1;
-        continue;
+            message = argv[i + 1] || ''; // 다음 값을 메시지로 저장
+            i += 1;
+            continue;
         }
 
         // 알 수 없는 인자가 들어오면 에러 발생
