@@ -4,12 +4,9 @@ import globals from "globals";
 import vue from "eslint-plugin-vue";
 import vueParser from "vue-eslint-parser";
 
-const webGlobals = {
+const globalConfig = {
   ...globals.browser,
   ...globals.es2022,
-};
-
-const nodeGlobals = {
   ...globals.node,
   ...globals.es2022,
 };
@@ -21,19 +18,11 @@ const baseConfig = [
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
-      globals: webGlobals,
+      globals: globalConfig,
     },
     rules: {
       semi: ["error", "always"],
       "no-undef": "error",
-    },
-  },
-  {
-    files: ["**/*.config.{js,mjs,cjs}"],
-    languageOptions: {
-      ecmaVersion: "latest",
-      sourceType: "module",
-      globals: nodeGlobals,
     },
   },
 ];
