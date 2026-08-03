@@ -35,14 +35,14 @@ function parseArgs(argv) {
     return { message };
 }
 
+// 지정된 경로에서 git 명령 실행
 async function git(args, cwd) {
-    // 지정된 경로에서 git 명령 실행
     const { stdout } = await exec('git', args, { cwd });
     return stdout.trim();
 }
 
+// 현재 디렉토리 기준으로 git 명령 실행, 출력은 별도 가공 없이 터미널에 그대로 표출
 async function gitVoid(args, cwd) {
-    // 출력은 그대로 터미널에 흘려보내고 git 명령만 실행
     await exec('git', args, { cwd, stdio: 'inherit' });
 }
 
@@ -53,7 +53,7 @@ async function getRepoRoot() {
 
 // staged 된 파일 목록 가져옴
 async function getStagedFiles(repoRoot) {
-    // --cached : staged 상태 기준, -z : null(\O) 구분자로 안전하게 파일명 구분, --diff-filter=ACMR : Added, Copied, Modified, Renamed 파일만 포함 (삭제 파일 제외)
+    // --cached : staged 상태 기준, --diff-filter=ACMR : Added, Copied, Modified, Renamed 파일만 포함 (삭제 파일 제외)
     const out = await git(['diff', '--cached', '--name-only', '--diff-filter=ACMR'], repoRoot);
     // staged 된 파일 없으면 빈 배열 반환
     if (!out) return [];
@@ -74,19 +74,17 @@ async function runLint(repoRoot, files) {
     const payload = [];
 
     for (const rel of files) {
-        // 레포 루트 기준 절대 경로 생성
-        const abs = path.join(repoRoot, rel);
-
         try {
             const content = await getStagedFileContent(repoRoot, rel);
             // 서버로 보낼 객체 추가
             payload.push({ filePath: rel, code: content });
-        } catch {
+        } catch (err) {
+            console.warn(`[pre-commit] staged 파일 내용을 읽지 못해 파일을 건너뜁니다 : ${rel}`, err);
         }
     }
 
     if (payload.length === 0) {
-        throw new Error('lint target staged files not found');
+        throw new Error('대상 staged 파일을 찾을 수 없습니다.');
     }
 
     const res = await fetch(`${API_BASE}/lint`, {
@@ -94,6 +92,11 @@ async function runLint(repoRoot, files) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ project: path.basename(repoRoot), files: payload })
     });
+    
+    if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`lint server failed (${res.status}): ${text.slice(0, 500)}`);
+    }
 
     let result;
     try {
@@ -103,20 +106,16 @@ async function runLint(repoRoot, files) {
         throw new Error(`invalid server response: ${res.status} ${text.slice(0, 500)}`);
     }
 
-    if (!res.ok) {
-        throw new Error(result.message || `lint server failed (${res.status})`);
-    }
-
+    // lint 결과가 정상인지 확인
     if (!result.ok) {
         const message = [ result.message || 'lint failed', result.output || '',  `errors=${result.errorCount ?? 0}, warnings=${result.warningCount ?? 0}`].filter(Boolean).join('\n');
         throw new Error(message);
     }
 
+    // lint 결과 출력
     if (result.output) {
         process.stdout.write(result.output.endsWith('\n') ? result.output : `${result.output}\n`);
     }
-
-    console.log( `[pre-commit] errors=${result.errorCount ?? 0}, warnings=${result.warningCount ?? 0}`);
 }
 
 async function main() {
@@ -126,12 +125,12 @@ async function main() {
     const files = stagedFiles.filter(isLintTarget);
 
     if (files.length === 0) {
-        throw new Error('eslint target staged files not found');
+
+        throw new Error('대상 staged 파일을 찾을 수 없습니다.');
     }
 
     await runLint(repoRoot, files);
 
-    console.log('[pre-commit] pre-check passed');
     await gitVoid(['commit', '-m', message], repoRoot);
 }
 

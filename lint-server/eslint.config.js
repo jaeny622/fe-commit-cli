@@ -36,7 +36,6 @@ const vueConfig = [
     },
     rules: {
       "no-extra-boolean-cast": "off",
-      "no-undef": "error",
     },
   },
 ];
